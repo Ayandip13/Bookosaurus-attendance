@@ -27,6 +27,7 @@ const DailyNote = () => {
     });
     console.log('saved');
     setSaved(true);
+    setText("");
     setTimeout(() => setSaved(false), 2000);
   };
 

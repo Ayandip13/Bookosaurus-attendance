@@ -47,7 +47,7 @@ const Dashboard = () => {
       </div>
 
       <AttendanceTable members={members} />
-      {/* <DailyNote /> */}
+      <DailyNote />
     </div>
   );
 };
