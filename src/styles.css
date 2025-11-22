@@ -1,0 +1,104 @@
+/* Global */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f4f6f8;
+}
+
+/* Page container (full width, no card box) */
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+/* Title */
+h2 {
+  margin-bottom: 20px;
+  font-size: 26px;
+  color: #222;
+}
+
+/* Buttons container */
+.member-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+/* Buttons */
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  transition: 0.2s ease;
+}
+
+button.not-present {
+  background: #2563eb; /* Blue */
+}
+
+button.present {
+  background: #22c55e; /* Green */
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  text-align: left;
+  background: #e9edf2;
+  padding: 14px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.empty {
+  color: #999;
+  font-style: italic;
+}
+
+/* Responsive Mobile */
+@media (max-width: 600px) {
+  .page {
+    padding: 10px;
+  }
+
+  button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  th,
+  td {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+}
