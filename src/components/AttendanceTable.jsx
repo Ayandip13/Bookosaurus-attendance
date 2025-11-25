@@ -15,6 +15,31 @@ const AttendanceTable = ({ members }) => {
   const [modalData, setModalData] = useState(null);
 
   const today = new Date().toISOString().split("T")[0];
+  // safe parse of yyyy-mm-dd into local Date (avoids timezone shifts)
+  const parseISODate = (iso) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  // return weekday name like "Monday"
+  const weekdayName = (iso) => {
+    const dt = parseISODate(iso);
+    return dt.toLocaleDateString(undefined, { weekday: "long" });
+  };
+
+  // return relative label: "Today", "Yesterday", "Tomorrow" or empty string
+  const relativeLabel = (iso) => {
+    const dt = parseISODate(iso);
+    const today = new Date();
+    // normalize both to local midnight for accurate day diff
+    const toMidnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffMs = toMidnight(dt) - toMidnight(today);
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Today";
+    if (diffDays === -1) return "Yesterday";
+    if (diffDays === 1) return "Tomorrow";
+    return "";
+  };
 
   useEffect(() => {
     // Load attendance
@@ -77,25 +102,73 @@ const AttendanceTable = ({ members }) => {
         >
           <thead>
             <tr>
-              <th style={{ padding: 10, background: "#e9edf2" }}>Member</th>
+              <th
+                style={{
+                  padding: "10px",
+                  background: "#e9edf2",
+                  position: "sticky",
+                  left: 0,
+                  zIndex: 5,
+                  minWidth: "170px",
+                }}
+              >
+                Member
+              </th>
 
-              {allDates.map((date) => (
-                <th key={date} style={{ padding: 10, background: "#e9edf2" }}>
-                  <div>{date}</div>
-                  <div
-                    onClick={() => notes[date] && openModal(date)}
+              {allDates.map((date) => {
+                const wd = weekdayName(date);
+                const rel = relativeLabel(date);
+                return (
+                  <th
+                    key={date}
                     style={{
-                      fontSize: 12,
-                      color: "#2563eb",
-                      cursor: notes[date] ? "pointer" : "default",
-                      opacity: notes[date] ? 0.8 : 0.4,
-                      marginTop: 4,
+                      padding: 10,
+                      background: "#e9edf2",
+                      textAlign: "center",
+                      minWidth: "180px",
                     }}
                   >
-                    {notes[date] ? notes[date].slice(0, 20) + "…" : "No note"}
-                  </div>
-                </th>
-              ))}
+                    <div style={{ fontWeight: 700 }}>{date}</div>
+
+                    <div style={{ marginTop: 4, fontSize: 12, opacity: 0.8 }}>
+                      {wd}
+                      {rel ? (
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            padding: "2px 6px",
+                            background: rel === "Today" ? "#fde68a" : "#dbeafe",
+                            color: rel === "Today" ? "#92400e" : "#1e3a8a",
+                            fontSize: 11,
+                            borderRadius: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {rel}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* NOTE ONLY IN HEADER */}
+                    <div
+                      onClick={() => notes[date] && openModal(date)}
+                      style={{
+                        marginTop: 6,
+                        fontSize: 12,
+                        cursor: notes[date] ? "pointer" : "default",
+                        color: notes[date] ? "#2563eb" : "#999",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {notes[date]
+                        ? notes[date].slice(0, 20) + "…"
+                        : "No note"}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 
@@ -119,26 +192,19 @@ const AttendanceTable = ({ members }) => {
 
                 {allDates.map((date) => {
                   const isPresent = records[m.id]?.[date];
-                  const note = notes[date];
 
                   return (
                     <td
                       key={date}
                       style={{
-                        padding: "10px 6px",
-                        minWidth: "140px",
-                        maxWidth: "140px",
+                        padding: 10,
                         textAlign: "center",
-                        cursor: note ? "pointer" : "default",
+                        minWidth: "180px",
                         background: isPresent ? "#d1fae5" : "#f9fafb",
                         border: "1px solid #eee",
                       }}
-                      onClick={() => note && openModal(date)}
                     >
                       {isPresent ? "✔" : ""}
-                      {/* <div style={{ fontSize: 12, opacity: 0.7 }}>
-                        {note ? note.slice(0, 10) + "…" : ""}
-                      </div> */}
                     </td>
                   );
                 })}
