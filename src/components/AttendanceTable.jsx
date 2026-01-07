@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   onSnapshot,
@@ -65,10 +65,13 @@ const AttendanceTable = ({ members }) => {
     return () => unsub();
   }, []);
 
-  // Collect all dates across all members
-  const allDates = Array.from(
-    new Set(Object.values(records).flatMap((dates) => Object.keys(dates || {})))
-  ).sort((a, b) => a.localeCompare(b));
+  const allDates = useMemo(() => {
+    return Array.from(
+      new Set(
+        Object.values(records).flatMap((dates) => Object.keys(dates || {}))
+      )
+    ).sort((a, b) => b.localeCompare(a));   // ← THIS IS THE ONLY CHANGE
+  }, [records]);
 
   const openModal = (date) => {
     setModalData({
@@ -104,10 +107,12 @@ const AttendanceTable = ({ members }) => {
               <tr>
                 <th
                   style={{
-                    padding: "30px",
-                    background: "#e9edf2",
+                    padding: "31.5px",
+                    background: "#d0d0d0",
                     minWidth: "100px",
                     textAlign: "center",
+                    borderBottom: "1px dashed #d0d0d0",
+                    borderRadius: "8px 0 0 0",
                   }}
                 >
                   Members
@@ -124,7 +129,7 @@ const AttendanceTable = ({ members }) => {
                       minWidth: "170px",
                       maxWidth: "170px",
                       background: "#fff",
-                      borderBottom: "1px solid #eee",
+                      borderBottom: "1px solid #d0d0d0",
                     }}
                   >
                     {m.name}
@@ -136,7 +141,7 @@ const AttendanceTable = ({ members }) => {
         </div>
 
         {/* Scrollable attendance dates */}
-        <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+        <div style={{ flex: "1 1 auto", overflowX: "auto", }}>
           <table
             style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}
           >
@@ -150,9 +155,10 @@ const AttendanceTable = ({ members }) => {
                       key={date}
                       style={{
                         padding: 10,
-                        background: "#e9edf2",
+                        background: "#d0d0d0",
                         textAlign: "center",
                         minWidth: "180px",
+                        borderBottom: "2px dotted #d0d0d0",
                       }}
                     >
                       <div style={{ fontWeight: 700 }}>{date}</div>
@@ -169,6 +175,7 @@ const AttendanceTable = ({ members }) => {
                               fontSize: 11,
                               borderRadius: 6,
                               fontWeight: 600,
+                              textTransform: "uppercase",
                             }}
                           >
                             {rel}
@@ -183,7 +190,7 @@ const AttendanceTable = ({ members }) => {
                           marginTop: 6,
                           fontSize: 12,
                           cursor: notes[date] ? "pointer" : "default",
-                          color: notes[date] ? "#2563eb" : "#999",
+                          color: notes[date] ? "#2563eb" : "#888",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -213,7 +220,7 @@ const AttendanceTable = ({ members }) => {
                           textAlign: "center",
                           minWidth: "180px",
                           background: isPresent ? "#d1fae5" : "#f9fafb",
-                          border: "1px solid #eee",
+                          border: "1px solid #d0d0d0",
                         }}
                       >
                         {isPresent ? "✔" : ""}
