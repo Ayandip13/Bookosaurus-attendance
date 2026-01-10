@@ -100,16 +100,15 @@ const AttendanceTable = ({ members }) => {
         />
       )}
       <div style={{ display: "flex", width: "100%" }}>
-        {/* Fixed member column */}
         <div style={{ flex: "0 0 auto" }}>
           <table style={{ borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr>
                 <th
                   style={{
-                    padding: "31.5px",
-                    background: "#d0d0d0",
-                    minWidth: "100px",
+                    padding: "31px",
+                    background: "linear-gradient(90deg, #d4f2ff, #feffff)",
+                    minWidth: "80px",
                     textAlign: "center",
                     borderBottom: "1px dashed #d0d0d0",
                     borderRadius: "8px 0 0 0",
@@ -126,9 +125,9 @@ const AttendanceTable = ({ members }) => {
                     style={{
                       padding: 10,
                       fontWeight: 600,
-                      minWidth: "170px",
-                      maxWidth: "170px",
-                      background: "#fff",
+                      minWidth: "80px",
+                      maxWidth: "80px",
+                      background: "linear-gradient(90deg, #d4f2ff, #feffff)",
                       borderBottom: "1px solid #d0d0d0",
                     }}
                   >
@@ -155,9 +154,9 @@ const AttendanceTable = ({ members }) => {
                       key={date}
                       style={{
                         padding: 10,
-                        background: "#d0d0d0",
+                        background: "linear-gradient(180deg, #d4f2ff, #feffff, #d4f2ff)",
                         textAlign: "center",
-                        minWidth: "180px",
+                        minWidth: "100px",
                         borderBottom: "2px dotted #d0d0d0",
                       }}
                     >
@@ -218,8 +217,8 @@ const AttendanceTable = ({ members }) => {
                         style={{
                           padding: 10,
                           textAlign: "center",
-                          minWidth: "180px",
-                          background: isPresent ? "#d1fae5" : "#f9fafb",
+                          minWidth: "100px",
+                          background: isPresent ? "#d1fae5" : "#fff",
                           border: "1px solid #d0d0d0",
                         }}
                       >
