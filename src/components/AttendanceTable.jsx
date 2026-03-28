@@ -13,6 +13,7 @@ const AttendanceTable = ({ members }) => {
   const [records, setRecords] = useState({});
   const [notes, setNotes] = useState({});
   const [modalData, setModalData] = useState(null);
+  const [showTotal, setShowTotal] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
   // safe parse of yyyy-mm-dd into local Date (avoids timezone shifts)
@@ -105,6 +106,7 @@ const AttendanceTable = ({ members }) => {
             <thead>
               <tr>
                 <th
+                  onDoubleClick={() => setShowTotal(!showTotal)}
                   style={{
                     padding: "31px",
                     background: "linear-gradient(90deg, #d4f2ff, #feffff)",
@@ -112,29 +114,74 @@ const AttendanceTable = ({ members }) => {
                     textAlign: "center",
                     borderBottom: "1px dashed #d0d0d0",
                     borderRadius: "8px 0 0 0",
+                    cursor: "pointer",
+                    userSelect: "none",
                   }}
                 >
                   Members
                 </th>
+                  <th
+                    style={{
+                      padding: showTotal ? "31px 15px" : "31px 0px",
+                      background: "linear-gradient(90deg, #feffff, #d4f2ff)",
+                      textAlign: "center",
+                      borderBottom: showTotal ? "1px dashed #d0d0d0" : "1px solid transparent",
+                      width: showTotal ? "60px" : "0px",
+                      minWidth: showTotal ? "60px" : "0px",
+                      maxWidth: showTotal ? "60px" : "0px",
+                      opacity: showTotal ? 1 : 0,
+                      overflow: "hidden",
+                      transition: "all 0.4s ease-in-out",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <div style={{ width: showTotal ? "auto" : 0, overflow: "hidden" }}>
+                      Total
+                    </div>
+                  </th>
               </tr>
             </thead>
             <tbody>
-              {members.map((m) => (
-                <tr key={m.id}>
-                  <td
-                    style={{
-                      padding: 10,
-                      fontWeight: 600,
-                      minWidth: "80px",
-                      maxWidth: "80px",
-                      background: "linear-gradient(90deg, #d4f2ff, #feffff)",
-                      borderBottom: "1px solid #d0d0d0",
-                    }}
-                  >
-                    {m.name}
-                  </td>
-                </tr>
-              ))}
+              {members.map((m) => {
+                const totalAttendance = allDates.filter((date) => records[m.id]?.[date]).length;
+                return (
+                  <tr key={m.id}>
+                    <td
+                      style={{
+                        padding: 10,
+                        fontWeight: 600,
+                        minWidth: "70px",
+                        maxWidth: "70px",
+                        background: "linear-gradient(90deg, #d4f2ff, #feffff)",
+                        borderBottom: "1px solid #d0d0d0",
+                      }}
+                    >
+                      {m.name}
+                    </td>
+                      <td
+                        style={{
+                          padding: showTotal ? "10px" : "10px 0px",
+                          fontWeight: "bold",
+                          textAlign: "center",
+                          width: showTotal ? "40px" : "0px",
+                          minWidth: showTotal ? "40px" : "0px",
+                          maxWidth: showTotal ? "40px" : "0px",
+                          background: "linear-gradient(90deg, #feffff, #d4f2ff)",
+                          borderBottom: showTotal ? "1px solid #d0d0d0" : "1px solid transparent",
+                          color: "#059669",
+                          opacity: showTotal ? 1 : 0,
+                          overflow: "hidden",
+                          transition: "all 0.4s ease-in-out",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <div style={{ width: showTotal ? "100%" : 0, overflow: "hidden" }}>
+                          {totalAttendance}
+                        </div>
+                      </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
