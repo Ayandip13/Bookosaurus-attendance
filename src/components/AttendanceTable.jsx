@@ -22,6 +22,13 @@ const AttendanceTable = ({ members }) => {
     return new Date(y, m - 1, d);
   };
 
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    const yy = y.slice(-2);
+    return `${d}/${m}/${yy}`;
+  };
+
   // return weekday name like "Monday"
   const weekdayName = (iso) => {
     const dt = parseISODate(iso);
@@ -120,25 +127,25 @@ const AttendanceTable = ({ members }) => {
                 >
                   Members
                 </th>
-                  <th
-                    style={{
-                      padding: showTotal ? "31px 15px" : "31px 0px",
-                      background: "linear-gradient(90deg, #feffff, #d4f2ff)",
-                      textAlign: "center",
-                      borderBottom: showTotal ? "1px dashed #d0d0d0" : "1px solid transparent",
-                      width: showTotal ? "60px" : "0px",
-                      minWidth: showTotal ? "60px" : "0px",
-                      maxWidth: showTotal ? "60px" : "0px",
-                      opacity: showTotal ? 1 : 0,
-                      overflow: "hidden",
-                      transition: "all 0.4s ease-in-out",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <div style={{ width: showTotal ? "auto" : 0, overflow: "hidden" }}>
-                      Total
-                    </div>
-                  </th>
+                <th
+                  style={{
+                    padding: showTotal ? "31px 15px" : "31px 0px",
+                    background: "linear-gradient(90deg, #feffff, #d4f2ff)",
+                    textAlign: "center",
+                    borderBottom: showTotal ? "1px dashed #d0d0d0" : "1px solid transparent",
+                    width: showTotal ? "60px" : "0px",
+                    minWidth: showTotal ? "60px" : "0px",
+                    maxWidth: showTotal ? "60px" : "0px",
+                    opacity: showTotal ? 1 : 0,
+                    overflow: "hidden",
+                    transition: "all 0.4s ease-in-out",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <div style={{ width: showTotal ? "auto" : 0, overflow: "hidden" }}>
+                    Total
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -158,27 +165,27 @@ const AttendanceTable = ({ members }) => {
                     >
                       {m.name}
                     </td>
-                      <td
-                        style={{
-                          padding: showTotal ? "10px" : "10px 0px",
-                          fontWeight: "bold",
-                          textAlign: "center",
-                          width: showTotal ? "40px" : "0px",
-                          minWidth: showTotal ? "40px" : "0px",
-                          maxWidth: showTotal ? "40px" : "0px",
-                          background: "linear-gradient(90deg, #feffff, #d4f2ff)",
-                          borderBottom: showTotal ? "1px solid #d0d0d0" : "1px solid transparent",
-                          color: "#059669",
-                          opacity: showTotal ? 1 : 0,
-                          overflow: "hidden",
-                          transition: "all 0.4s ease-in-out",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <div style={{ width: showTotal ? "100%" : 0, overflow: "hidden" }}>
-                          {totalAttendance}
-                        </div>
-                      </td>
+                    <td
+                      style={{
+                        padding: showTotal ? "10px" : "10px 0px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                        width: showTotal ? "40px" : "0px",
+                        minWidth: showTotal ? "40px" : "0px",
+                        maxWidth: showTotal ? "40px" : "0px",
+                        background: "linear-gradient(90deg, #feffff, #d4f2ff)",
+                        borderBottom: showTotal ? "1px solid #d0d0d0" : "1px solid transparent",
+                        color: "#059669",
+                        opacity: showTotal ? 1 : 0,
+                        overflow: "hidden",
+                        transition: "all 0.4s ease-in-out",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <div style={{ width: showTotal ? "100%" : 0, overflow: "hidden" }}>
+                        {totalAttendance}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -207,8 +214,7 @@ const AttendanceTable = ({ members }) => {
                         borderBottom: "2px dotted #d0d0d0",
                       }}
                     >
-                      <div style={{ fontWeight: 700 }}>{date}</div>
-
+                      <div style={{ fontWeight: 700 }}>{formatDate(date)}</div>
                       <div style={{ marginTop: 4, fontSize: 12, opacity: 0.8 }}>
                         {wd}
                         {rel ? (

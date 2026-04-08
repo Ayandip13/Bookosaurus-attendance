@@ -3,6 +3,13 @@ import React from "react";
 const NoteModal = ({ open, onClose, date, text, onDelete }) => {
   if (!open) return null;
 
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    const yy = y.slice(-2);
+    return `${d}/${m}/${yy}`;
+  };
+
   return (
     <div
       style={{
@@ -26,7 +33,7 @@ const NoteModal = ({ open, onClose, date, text, onDelete }) => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3>📅 {date}</h3>
+        <h3>📅 {formatDate(date)}</h3>
         <p style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>{text}</p>
 
         {onDelete && (
