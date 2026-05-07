@@ -8,8 +8,10 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import NoteModal from "./NoteModal";
+import { useTheme } from "../ThemeContext";
 
 const AttendanceTable = ({ members }) => {
+  const { theme } = useTheme();
   const [records, setRecords] = useState({});
   const [notes, setNotes] = useState({});
   const [modalData, setModalData] = useState(null);
@@ -107,7 +109,18 @@ const AttendanceTable = ({ members }) => {
           }
         />
       )}
-      <div style={{ display: "flex", width: "100%" }}>
+
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          borderRadius: 12,
+          overflow: "hidden",
+          border: `1px solid ${theme.border}`,
+          boxShadow: theme.shadow,
+        }}
+      >
+        {/* Fixed members column */}
         <div style={{ flex: "0 0 auto" }}>
           <table style={{ borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
@@ -116,13 +129,14 @@ const AttendanceTable = ({ members }) => {
                   onDoubleClick={() => setShowTotal(!showTotal)}
                   style={{
                     padding: "31px",
-                    background: "linear-gradient(90deg, #d4f2ff, #feffff)",
+                    background: theme.membersColBg,
                     minWidth: "80px",
                     textAlign: "center",
-                    borderBottom: "1px dashed #d0d0d0",
-                    borderRadius: "8px 0 0 0",
+                    borderBottom: `1px dashed ${theme.border}`,
                     cursor: "pointer",
                     userSelect: "none",
+                    color: theme.textPrimary,
+                    fontWeight: 700,
                   }}
                 >
                   Members
@@ -130,9 +144,9 @@ const AttendanceTable = ({ members }) => {
                 <th
                   style={{
                     padding: showTotal ? "31px 15px" : "31px 0px",
-                    background: "linear-gradient(90deg, #feffff, #d4f2ff)",
+                    background: theme.membersColBgAlt,
                     textAlign: "center",
-                    borderBottom: showTotal ? "1px dashed #d0d0d0" : "1px solid transparent",
+                    borderBottom: showTotal ? `1px dashed ${theme.border}` : "1px solid transparent",
                     width: showTotal ? "60px" : "0px",
                     minWidth: showTotal ? "60px" : "0px",
                     maxWidth: showTotal ? "60px" : "0px",
@@ -140,6 +154,7 @@ const AttendanceTable = ({ members }) => {
                     overflow: "hidden",
                     transition: "all 0.4s ease-in-out",
                     whiteSpace: "nowrap",
+                    color: theme.textPrimary,
                   }}
                 >
                   <div style={{ width: showTotal ? "auto" : 0, overflow: "hidden" }}>
@@ -159,8 +174,9 @@ const AttendanceTable = ({ members }) => {
                         fontWeight: 600,
                         minWidth: "70px",
                         maxWidth: "70px",
-                        background: "linear-gradient(90deg, #d4f2ff, #feffff)",
-                        borderBottom: "1px solid #d0d0d0",
+                        background: theme.membersColBg,
+                        borderBottom: `1px solid ${theme.tableCellBorder}`,
+                        color: theme.textPrimary,
                       }}
                     >
                       {m.name}
@@ -173,9 +189,9 @@ const AttendanceTable = ({ members }) => {
                         width: showTotal ? "40px" : "0px",
                         minWidth: showTotal ? "40px" : "0px",
                         maxWidth: showTotal ? "40px" : "0px",
-                        background: "linear-gradient(90deg, #feffff, #d4f2ff)",
-                        borderBottom: showTotal ? "1px solid #d0d0d0" : "1px solid transparent",
-                        color: "#059669",
+                        background: theme.membersColBgAlt,
+                        borderBottom: showTotal ? `1px solid ${theme.tableCellBorder}` : "1px solid transparent",
+                        color: theme.presentColor,
                         opacity: showTotal ? 1 : 0,
                         overflow: "hidden",
                         transition: "all 0.4s ease-in-out",
@@ -208,22 +224,23 @@ const AttendanceTable = ({ members }) => {
                       key={date}
                       style={{
                         padding: 10,
-                        background: "linear-gradient(180deg, #d4f2ff, #feffff, #d4f2ff)",
+                        background: theme.dateHeaderBg,
                         textAlign: "center",
                         minWidth: "100px",
-                        borderBottom: "2px dotted #d0d0d0",
+                        borderBottom: `2px dotted ${theme.border}`,
+                        color: theme.textPrimary,
                       }}
                     >
                       <div style={{ fontWeight: 700 }}>{formatDate(date)}</div>
-                      <div style={{ marginTop: 4, fontSize: 12, opacity: 0.8 }}>
+                      <div style={{ marginTop: 4, fontSize: 12, color: theme.textSecondary }}>
                         {wd}
                         {rel ? (
                           <span
                             style={{
                               marginLeft: 6,
                               padding: "2px 6px",
-                              background: rel === "Today" ? "#fde68a" : "#dbeafe",
-                              color: rel === "Today" ? "#92400e" : "#1e3a8a",
+                              background: rel === "Today" ? theme.todayBg : theme.yesterdayBg,
+                              color: rel === "Today" ? theme.todayColor : theme.yesterdayColor,
                               fontSize: 11,
                               borderRadius: 6,
                               fontWeight: 600,
@@ -242,7 +259,7 @@ const AttendanceTable = ({ members }) => {
                           marginTop: 6,
                           fontSize: 12,
                           cursor: notes[date] ? "pointer" : "default",
-                          color: notes[date] ? "#2563eb" : "#888",
+                          color: notes[date] ? theme.noteLinkColor : theme.noteEmptyColor,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -271,8 +288,11 @@ const AttendanceTable = ({ members }) => {
                           padding: 10,
                           textAlign: "center",
                           minWidth: "100px",
-                          background: isPresent ? "#d1fae5" : "#fff",
-                          border: "1px solid #d0d0d0",
+                          background: isPresent ? theme.presentBg : theme.cardBg,
+                          border: `1px solid ${theme.tableCellBorder}`,
+                          color: isPresent ? theme.presentColor : theme.textMuted,
+                          fontWeight: isPresent ? 600 : 400,
+                          fontSize: isPresent ? 16 : 14,
                         }}
                       >
                         {isPresent ? "✔" : ""}

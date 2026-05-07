@@ -1,25 +1,30 @@
-/* Global */
-body {
+/* Global reset & base */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Segoe UI", sans-serif;
-  background-color: "#f9f9f9";
 }
 
-/* Page container (full width, no card box) */
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Page container */
 .page {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 25px;
-  background: #fff;
+  transition: background 0.5s ease, color 0.5s ease;
 }
 
 /* Title */
 h2 {
   margin-bottom: 20px;
   font-size: 26px;
-  color: #222;
 }
 
 /* Buttons container */
@@ -30,62 +35,54 @@ h2 {
   margin-bottom: 25px;
 }
 
-/* Buttons */
+/* Base button reset */
 button {
   padding: 10px 15px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: white;
-  transition: 0.2s ease;
-}
-
-button.not-present {
-  background: #2563eb; /* Blue */
-}
-
-button.present {
-  background: #22c55e; /* Green */
+  transition: all 0.25s ease;
+  letter-spacing: 0.02em;
 }
 
 button:hover {
-  opacity: 0.5;
+  opacity: 0.85;
+  transform: translateY(-1px);
 }
 
-/* Table */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-th {
-  text-align: left;
-  background: #e9edf2;
-  padding: 14px;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-td {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 14px;
+button:active {
+  transform: translateY(0);
 }
 
 .empty {
-  color: #999;
   font-style: italic;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #008080;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #006666;
 }
 
 /* Responsive Mobile */
 @media (max-width: 600px) {
   .page {
-    padding: 10px;
+    padding: 12px;
   }
 
   button {
