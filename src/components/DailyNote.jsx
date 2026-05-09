@@ -87,7 +87,8 @@ const DailyNote = () => {
           resize: "vertical",
           outline: "none",
           transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-          fontFamily: "Inter, system-ui, sans-serif",
+          fontFamily: "Montserrat, system-ui, sans-serif",
+          // Change this line for other fonts
           letterSpacing: "-0.01em",
         }}
         onFocus={(e) => {
