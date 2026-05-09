@@ -3,7 +3,6 @@ import {
   collection,
   onSnapshot,
   doc,
-  getDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -18,7 +17,7 @@ const AttendanceTable = ({ members }) => {
   const [showTotal, setShowTotal] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  // safe parse of yyyy-mm-dd into local Date (avoids timezone shifts)
+
   const parseISODate = (iso) => {
     const [y, m, d] = iso.split("-").map(Number);
     return new Date(y, m - 1, d);
@@ -27,268 +26,280 @@ const AttendanceTable = ({ members }) => {
   const formatDate = (iso) => {
     if (!iso) return "";
     const [y, m, d] = iso.split("-");
-    const yy = y.slice(-2);
-    return `${d}/${m}/${yy}`;
+    return `${d}/${m}/${y.slice(-2)}`;
   };
 
-  // return weekday name like "Monday"
-  const weekdayName = (iso) => {
-    const dt = parseISODate(iso);
-    return dt.toLocaleDateString(undefined, { weekday: "long" });
-  };
+  const weekdayName = (iso) =>
+    parseISODate(iso).toLocaleDateString(undefined, { weekday: "long" });
 
-  // return relative label: "Today", "Yesterday", "Tomorrow" or empty string
   const relativeLabel = (iso) => {
     const dt = parseISODate(iso);
-    const today = new Date();
-    // normalize both to local midnight for accurate day diff
-    const toMidnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const diffMs = toMidnight(dt) - toMidnight(today);
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return "Today";
-    if (diffDays === -1) return "Yesterday";
-    if (diffDays === 1) return "Tomorrow";
+    const now = new Date();
+    const toMid = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diff = Math.round((toMid(dt) - toMid(now)) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === -1) return "Yesterday";
+    if (diff === 1) return "Tomorrow";
     return "";
   };
 
   useEffect(() => {
-    // Load attendance
     const unsub = onSnapshot(collection(db, "attendance"), (snapshot) => {
       const all = {};
-      snapshot.forEach((doc) => {
-        all[doc.id] = doc.data().dates || {};
-      });
+      snapshot.forEach((d) => { all[d.id] = d.data().dates || {}; });
       setRecords(all);
     });
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    // Load notes
     const unsub = onSnapshot(collection(db, "notes"), (snapshot) => {
       const all = {};
-      snapshot.forEach((doc) => {
-        all[doc.id] = doc.data().text;
-      });
+      snapshot.forEach((d) => { all[d.id] = d.data().text; });
       setNotes(all);
     });
     return () => unsub();
   }, []);
 
-  const allDates = useMemo(() => {
-    return Array.from(
-      new Set(
-        Object.values(records).flatMap((dates) => Object.keys(dates || {}))
-      )
-    ).sort((a, b) => b.localeCompare(a));   // ← THIS IS THE ONLY CHANGE
-  }, [records]);
+  const allDates = useMemo(() =>
+    Array.from(
+      new Set(Object.values(records).flatMap((d) => Object.keys(d || {})))
+    ).sort((a, b) => b.localeCompare(a)),
+    [records]
+  );
 
-  const openModal = (date) => {
-    setModalData({
-      date,
-      text: notes[date] ?? "",
-      canDelete: date === today,
-    });
-  };
+  const openModal = (date) =>
+    setModalData({ date, text: notes[date] ?? "", canDelete: date === today });
 
   const deleteNote = async (date) => {
     await deleteDoc(doc(db, "notes", date));
     setModalData(null);
   };
 
+  // ── Shared styles ──
+  const MEMBER_W = 110;   // px — width of the sticky Members column
+  const TOTAL_W  = 60;    // px — width of the sticky Total column
+  const ROW_H    = 46;    // px — fixed body row height
+
+  const stickyBase = {
+    position: "sticky",
+    zIndex: 2,
+  };
+
+  const memberColStyle = {
+    ...stickyBase,
+    left: 0,
+    width: MEMBER_W,
+    minWidth: MEMBER_W,
+    maxWidth: MEMBER_W,
+    background: theme.membersColBg,
+  };
+
+  const totalColStyle = {
+    ...stickyBase,
+    left: MEMBER_W,
+    width: TOTAL_W,
+    minWidth: TOTAL_W,
+    maxWidth: TOTAL_W,
+    background: theme.membersColBgAlt,
+    overflow: "hidden",
+    transition: "width 0.35s ease, min-width 0.35s ease, opacity 0.35s ease, padding 0.35s ease",
+    ...(showTotal
+      ? { opacity: 1, padding: "0 12px" }
+      : { width: 0, minWidth: 0, maxWidth: 0, opacity: 0, padding: 0 }),
+  };
+
   return (
     <>
       {modalData && (
         <NoteModal
-          open={true}
+          open
           date={modalData.date}
           text={modalData.text}
           onClose={() => setModalData(null)}
-          onDelete={
-            modalData.canDelete ? () => deleteNote(modalData.date) : null
-          }
+          onDelete={modalData.canDelete ? () => deleteNote(modalData.date) : null}
         />
       )}
 
+      {/* Single scrollable container — one table, sticky left cols */}
       <div
         style={{
-          display: "flex",
           width: "100%",
           borderRadius: 16,
-          overflow: "hidden",
           border: `1px solid ${theme.border}`,
           boxShadow: theme.shadow,
           background: theme.cardBg,
+          overflowX: "auto",
+          overflowY: "visible",
+          // give the sticky cols a shadow so they visually separate from scroll content
+          WebkitOverflowScrolling: "touch",
         }}
       >
-        {/* Fixed members column */}
-        <div style={{ flex: "0 0 auto" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr>
-                <th
-                  onDoubleClick={() => setShowTotal(!showTotal)}
-                  style={{
-                    padding: "31px",
-                    background: theme.membersColBg,
-                    minWidth: "80px",
-                    textAlign: "center",
-                    borderBottom: `1px dashed ${theme.border}`,
-                    cursor: "pointer",
-                    userSelect: "none",
-                    color: theme.textPrimary,
-                    fontWeight: 700,
-                  }}
-                >
-                  Members
-                </th>
-                <th
-                  style={{
-                    padding: showTotal ? "31px 15px" : "31px 0px",
-                    background: theme.membersColBgAlt,
-                    textAlign: "center",
-                    borderBottom: showTotal ? `1px dashed ${theme.border}` : "1px solid transparent",
-                    width: showTotal ? "60px" : "0px",
-                    minWidth: showTotal ? "60px" : "0px",
-                    maxWidth: showTotal ? "60px" : "0px",
-                    opacity: showTotal ? 1 : 0,
-                    overflow: "hidden",
-                    transition: "all 0.4s ease-in-out",
-                    whiteSpace: "nowrap",
-                    color: theme.textPrimary,
-                  }}
-                >
-                  <div style={{ width: showTotal ? "auto" : 0, overflow: "hidden" }}>
-                    Total
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => {
-                const totalAttendance = allDates.filter((date) => records[m.id]?.[date]).length;
+        <table
+          style={{
+            borderCollapse: "collapse",
+            fontSize: 14,
+            width: "max-content",
+            minWidth: "100%",
+          }}
+        >
+          {/* ── THEAD ── */}
+          <thead>
+            <tr>
+              {/* Members header — sticky */}
+              <th
+                onDoubleClick={() => setShowTotal((p) => !p)}
+                title="Double-click to toggle totals"
+                style={{
+                  ...memberColStyle,
+                  padding: "14px 12px",
+                  textAlign: "center",
+                  fontWeight: 700,
+                  color: theme.textPrimary,
+                  borderBottom: `2px solid ${theme.border}`,
+                  borderRight: `1px solid ${theme.border}`,
+                  cursor: "pointer",
+                  userSelect: "none",
+                  zIndex: 3,
+                  verticalAlign: "bottom",
+                }}
+              >
+                Members
+              </th>
+
+              {/* Total header — sticky, collapsible */}
+              <th
+                style={{
+                  ...totalColStyle,
+                  padding: showTotal ? "14px 8px" : "14px 0",
+                  textAlign: "center",
+                  fontWeight: 700,
+                  color: theme.textPrimary,
+                  borderBottom: `2px solid ${theme.border}`,
+                  borderRight: showTotal ? `1px solid ${theme.border}` : "none",
+                  whiteSpace: "nowrap",
+                  zIndex: 3,
+                  verticalAlign: "bottom",
+                }}
+              >
+                {showTotal ? "Total" : ""}
+              </th>
+
+              {/* Date headers */}
+              {allDates.map((date) => {
+                const rel = relativeLabel(date);
                 return (
-                  <tr key={m.id}>
-                    <td
+                  <th
+                    key={date}
+                    style={{
+                      padding: "10px 12px",
+                      background: theme.dateHeaderBg,
+                      textAlign: "center",
+                      minWidth: 110,
+                      borderBottom: `2px solid ${theme.border}`,
+                      borderLeft: `1px solid ${theme.tableCellBorder}`,
+                      color: theme.textPrimary,
+                      fontWeight: 400,
+                      verticalAlign: "top",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>{formatDate(date)}</div>
+                    <div style={{ marginTop: 3, fontSize: 11.5, color: theme.textSecondary }}>
+                      {weekdayName(date)}
+                      {rel && (
+                        <span style={{
+                          marginLeft: 5,
+                          padding: "1px 6px",
+                          background: rel === "Today" ? theme.todayBg : theme.yesterdayBg,
+                          color: rel === "Today" ? theme.todayColor : theme.yesterdayColor,
+                          fontSize: 10,
+                          borderRadius: 6,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                        }}>
+                          {rel}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      onClick={() => notes[date] && openModal(date)}
                       style={{
-                        padding: 10,
-                        fontWeight: 600,
-                        minWidth: "70px",
-                        maxWidth: "70px",
-                        background: theme.membersColBg,
-                        borderBottom: `1px solid ${theme.tableCellBorder}`,
-                        color: theme.textPrimary,
-                      }}
-                    >
-                      {m.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: showTotal ? "10px" : "10px 0px",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                        width: showTotal ? "40px" : "0px",
-                        minWidth: showTotal ? "40px" : "0px",
-                        maxWidth: showTotal ? "40px" : "0px",
-                        background: theme.membersColBgAlt,
-                        borderBottom: showTotal ? `1px solid ${theme.tableCellBorder}` : "1px solid transparent",
-                        color: theme.presentColor,
-                        opacity: showTotal ? 1 : 0,
-                        overflow: "hidden",
-                        transition: "all 0.4s ease-in-out",
+                        marginTop: 5,
+                        fontSize: 11,
+                        cursor: notes[date] ? "pointer" : "default",
+                        color: notes[date] ? theme.noteLinkColor : theme.noteEmptyColor,
                         whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: 100,
                       }}
                     >
-                      <div style={{ width: showTotal ? "100%" : 0, overflow: "hidden" }}>
-                        {totalAttendance}
-                      </div>
-                    </td>
-                  </tr>
+                      {notes[date] ? notes[date].slice(0, 18) + "…" : "No note"}
+                    </div>
+                  </th>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
 
-        {/* Scrollable attendance dates */}
-        <div style={{ flex: "1 1 auto", overflowX: "auto", }}>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}
-          >
-            <thead>
-              <tr>
-                {allDates.map((date) => {
-                  const wd = weekdayName(date);
-                  const rel = relativeLabel(date);
-                  return (
-                    <th
-                      key={date}
-                      style={{
-                        padding: 10,
-                        background: theme.dateHeaderBg,
-                        textAlign: "center",
-                        minWidth: "100px",
-                        borderBottom: `2px dotted ${theme.border}`,
-                        color: theme.textPrimary,
-                      }}
-                    >
-                      <div style={{ fontWeight: 700 }}>{formatDate(date)}</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: theme.textSecondary }}>
-                        {wd}
-                        {rel ? (
-                          <span
-                            style={{
-                              marginLeft: 6,
-                              padding: "2px 6px",
-                              background: rel === "Today" ? theme.todayBg : theme.yesterdayBg,
-                              color: rel === "Today" ? theme.todayColor : theme.yesterdayColor,
-                              fontSize: 11,
-                              borderRadius: 6,
-                              fontWeight: 600,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {rel}
-                          </span>
-                        ) : null}
-                      </div>
+          {/* ── TBODY ── */}
+          <tbody>
+            {members.map((m, i) => {
+              const totalAttendance = allDates.filter((d) => records[m.id]?.[d]).length;
+              const isEven = i % 2 === 0;
 
-                      {/* NOTE ONLY IN HEADER */}
-                      <div
-                        onClick={() => notes[date] && openModal(date)}
-                        style={{
-                          marginTop: 6,
-                          fontSize: 12,
-                          cursor: notes[date] ? "pointer" : "default",
-                          color: notes[date] ? theme.noteLinkColor : theme.noteEmptyColor,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {notes[date]
-                          ? notes[date].slice(0, 20) + "…"
-                          : "No note"}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-
-            <tbody>
-              {members.map((m) => (
+              return (
                 <tr key={m.id}>
-                  {allDates.map((date) => {
-                    const isPresent = records[m.id]?.[date];
+                  {/* Member name — sticky */}
+                  <td
+                    style={{
+                      ...memberColStyle,
+                      padding: "0 12px",
+                      height: ROW_H,
+                      fontWeight: 600,
+                      color: theme.textPrimary,
+                      borderBottom: `1px solid ${theme.tableCellBorder}`,
+                      borderRight: `1px solid ${theme.border}`,
+                      // subtle alternating bg
+                      background: isEven
+                        ? theme.membersColBg
+                        : theme.membersColBgAlt,
+                      boxShadow: "2px 0 6px rgba(91,155,213,0.06)",
+                    }}
+                  >
+                    {m.name}
+                  </td>
 
+                  {/* Total — sticky, collapsible */}
+                  <td
+                    style={{
+                      ...totalColStyle,
+                      height: ROW_H,
+                      textAlign: "center",
+                      fontWeight: 700,
+                      color: theme.presentColor,
+                      borderBottom: `1px solid ${theme.tableCellBorder}`,
+                      borderRight: showTotal ? `1px solid ${theme.border}` : "none",
+                      background: isEven
+                        ? theme.membersColBgAlt
+                        : theme.membersColBg,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {showTotal ? totalAttendance : ""}
+                  </td>
+
+                  {/* Attendance cells */}
+                  {allDates.map((date) => {
+                    const isPresent = !!records[m.id]?.[date];
                     return (
                       <td
                         key={date}
                         style={{
-                          padding: 10,
+                          height: ROW_H,
                           textAlign: "center",
-                          minWidth: "100px",
+                          minWidth: 110,
                           background: isPresent ? theme.presentBg : theme.cardBg,
                           border: `1px solid ${theme.tableCellBorder}`,
                           color: isPresent ? theme.presentColor : theme.textMuted,
@@ -302,10 +313,10 @@ const AttendanceTable = ({ members }) => {
                     );
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   );
