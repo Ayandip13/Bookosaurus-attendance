@@ -1,69 +1,126 @@
-/* Global reset & base */
-* {
+/* ─── Reset ─── */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ─── Base ─── */
 body {
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
-/* Page container */
+/* ─── Page wrapper ─── */
 .page {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 25px;
-  transition: background 0.5s ease, color 0.5s ease;
+  padding: 32px 28px;
+  min-height: 100vh;
 }
 
-/* Title */
+/* ─── Title ─── */
 h2 {
-  margin-bottom: 20px;
-  font-size: 26px;
+  margin-bottom: 24px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
-/* Buttons container */
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Member buttons ─── */
 .member-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 25px;
+  gap: 10px;
+  margin-bottom: 28px;
 }
 
-/* Base button reset */
+/* ─── Base button ─── */
 button {
-  padding: 10px 15px;
+  padding: 10px 18px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
+  font-family: "Inter", system-ui, sans-serif;
   color: white;
-  transition: all 0.25s ease;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.2s ease;
+  border-radius: inherit;
 }
 
 button:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
+}
+
+button:hover::after {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
 }
 
+/* ─── Utility ─── */
 .empty {
   font-style: italic;
 }
 
-/* Scrollbar styling */
+/* ─── Animations ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(91, 155, 213, 0.0); }
+  50% { box-shadow: 0 0 0 6px rgba(91, 155, 213, 0.08); }
+}
+
+.page > * {
+  animation: fadeInUp 0.4s ease both;
+}
+
+.page > *:nth-child(1) { animation-delay: 0.00s; }
+.page > *:nth-child(2) { animation-delay: 0.06s; }
+.page > *:nth-child(3) { animation-delay: 0.12s; }
+.page > *:nth-child(4) { animation-delay: 0.18s; }
+
+/* ─── Scrollbars ─── */
 ::-webkit-scrollbar {
   height: 6px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -71,18 +128,18 @@ button:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #008080;
-  border-radius: 3px;
+  background: linear-gradient(135deg, #7ab3e0, #5b9bd5);
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #006666;
+  background: linear-gradient(135deg, #5b9bd5, #4a88c2);
 }
 
-/* Responsive Mobile */
+/* ─── Responsive ─── */
 @media (max-width: 600px) {
   .page {
-    padding: 12px;
+    padding: 16px 14px;
   }
 
   button {
@@ -90,10 +147,9 @@ button:active {
     justify-content: center;
   }
 
-  th,
-  td {
-    font-size: 13px;
-    padding: 10px;
+  th, td {
+    font-size: 12px;
+    padding: 9px 8px;
   }
 
   h2 {

@@ -114,10 +114,11 @@ const AttendanceTable = ({ members }) => {
         style={{
           display: "flex",
           width: "100%",
-          borderRadius: 12,
+          borderRadius: 16,
           overflow: "hidden",
           border: `1px solid ${theme.border}`,
           boxShadow: theme.shadow,
+          background: theme.cardBg,
         }}
       >
         {/* Fixed members column */}
@@ -291,8 +292,9 @@ const AttendanceTable = ({ members }) => {
                           background: isPresent ? theme.presentBg : theme.cardBg,
                           border: `1px solid ${theme.tableCellBorder}`,
                           color: isPresent ? theme.presentColor : theme.textMuted,
-                          fontWeight: isPresent ? 600 : 400,
-                          fontSize: isPresent ? 16 : 14,
+                          fontWeight: isPresent ? 700 : 400,
+                          fontSize: isPresent ? 17 : 14,
+                          transition: "background 0.2s ease",
                         }}
                       >
                         {isPresent ? "✔" : ""}
