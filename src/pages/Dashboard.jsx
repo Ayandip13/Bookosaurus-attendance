@@ -7,10 +7,98 @@ import { toggleAttendance } from "../utils/markAttendance";
 import DailyNote from "../components/DailyNote";
 import { useTheme } from "../ThemeContext";
 
+const DISMISSED_KEY = "attendance-dismissed-members";
+
+/* ── Small member chip with a hover-dismiss × ── */
+const MemberChip = ({ member, isPresent, onToggle, onDismiss, theme }) => {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      style={{ position: "relative", display: "inline-flex" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        onClick={() => onToggle(member.id, member.name)}
+        style={{
+          background: isPresent ? theme.btnPresentGradient : theme.btnAbsentGradient,
+          boxShadow: isPresent ? theme.btnPresentShadow : theme.btnAbsentShadow,
+          border: `1px solid ${isPresent ? theme.btnPresentBorder : theme.btnAbsentBorder}`,
+          color: "#fff",
+          padding: "10px 20px",
+          paddingRight: hovered ? 36 : 20,
+          borderRadius: 10,
+          fontSize: 13.5,
+          fontWeight: 600,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          transition: "padding-right 0.2s ease, box-shadow 0.2s ease",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {isPresent ? (
+          <><span style={{ fontSize: 15 }}>✓</span>{member.name}</>
+        ) : (
+          <><span style={{ fontSize: 14, opacity: 0.8 }}>+</span>{member.name}</>
+        )}
+      </button>
+
+      {/* Dismiss × — visible on hover */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDismiss(member.id); }}
+        title={`Dismiss ${member.name}`}
+        style={{
+          position: "absolute",
+          right: 6,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: "rgba(0,0,0,0.28)",
+          border: "none",
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+          lineHeight: 1,
+          opacity: hovered ? 1 : 0,
+          pointerEvents: hovered ? "auto" : "none",
+          transition: "opacity 0.18s ease",
+          boxShadow: "none",
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
+/* ── Main Dashboard ── */
 const Dashboard = () => {
   const { theme, isDark, toggleTheme } = useTheme();
   const [attendanceMap, setAttendanceMap] = useState({});
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(DISMISSED_KEY)) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [showRestorePanel, setShowRestorePanel] = useState(false);
+
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // Persist dismissed list
+  useEffect(() => {
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify(dismissed));
+  }, [dismissed]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "attendance"), (snapshot) => {
@@ -27,8 +115,20 @@ const Dashboard = () => {
     await toggleAttendance(id, name);
   };
 
-  const presentCount = members.filter((m) => attendanceMap[m.id]?.[today]).length;
-  const totalCount = members.length;
+  const dismissMember = (id) => {
+    setDismissed((prev) => [...prev, id]);
+    setShowRestorePanel(false);
+  };
+
+  const restoreMember = (id) => {
+    setDismissed((prev) => prev.filter((d) => d !== id));
+  };
+
+  const activeMembers = members.filter((m) => !dismissed.includes(m.id));
+  const dismissedMembers = members.filter((m) => dismissed.includes(m.id));
+
+  const presentCount = activeMembers.filter((m) => attendanceMap[m.id]?.[today]).length;
+  const totalCount = activeMembers.length;
 
   return (
     <div
@@ -66,31 +166,29 @@ const Dashboard = () => {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           {/* Title + subtitle */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: 12,
-                background: theme.iconBg,
-                border: `1px solid ${theme.iconBorder}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 20, backdropFilter: "blur(8px)",
-                boxShadow: "0 2px 12px rgba(91,155,213,0.15)",
-              }}>
-                📋
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: theme.heroTitle, letterSpacing: "-0.03em" }}>
-                  Team Attendance
-                </h2>
-                <p style={{ margin: 0, fontSize: 13, color: theme.heroSubtitle, marginTop: 2 }}>
-                  {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-                </p>
-              </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12,
+              background: theme.iconBg,
+              border: `1px solid ${theme.iconBorder}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 20, backdropFilter: "blur(8px)",
+              boxShadow: "0 2px 12px rgba(91,155,213,0.15)",
+            }}>
+              📋
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: theme.heroTitle, letterSpacing: "-0.03em" }}>
+                Team Attendance
+              </h2>
+              <p style={{ margin: 0, fontSize: 13, color: theme.heroSubtitle, marginTop: 2 }}>
+                {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              </p>
             </div>
           </div>
 
-          {/* Right: stats + theme toggle */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Right controls */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {/* Attendance badge */}
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
@@ -101,84 +199,106 @@ const Dashboard = () => {
             }}>
               <div style={{
                 width: 8, height: 8, borderRadius: "50%",
-                background: presentCount === totalCount ? "#4ade80" : "#5b9bd5",
-                boxShadow: `0 0 0 3px ${presentCount === totalCount ? "rgba(74,222,128,0.2)" : "rgba(91,155,213,0.2)"}`,
+                background: presentCount === totalCount ? "#4ade80" : "#60a5fa",
+                boxShadow: `0 0 0 3px ${presentCount === totalCount ? "rgba(74,222,128,0.25)" : "rgba(96,165,250,0.25)"}`,
               }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: theme.statText }}>
                 {presentCount} / {totalCount} Present
               </span>
             </div>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              style={{
-                background: theme.toggleBg,
-                color: theme.toggleText,
-                border: `1px solid ${theme.toggleBorder}`,
-                padding: "8px 14px",
-                borderRadius: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: 7,
-                fontSize: 13,
-                fontWeight: 600,
-                backdropFilter: "blur(8px)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{isDark ? "☀️" : "🌙"}</span>
-              {isDark ? "Light" : "Dark"}
-            </button>
+            {/* Hidden members pill — always shown if any dismissed */}
+            {dismissedMembers.length > 0 && (
+              <button
+                onClick={() => setShowRestorePanel((p) => !p)}
+                style={{
+                  background: showRestorePanel ? "rgba(255,255,255,0.30)" : "rgba(255,255,255,0.15)",
+                  color: "#ffffff",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  borderRadius: 10,
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  backdropFilter: "blur(8px)",
+                  cursor: "pointer",
+                  transition: "background 0.2s ease",
+                }}
+              >
+                {dismissedMembers.length} Hidden
+              </button>
+            )}
           </div>
         </div>
+
+        {/* ── Restore panel ── */}
+        {showRestorePanel && dismissedMembers.length > 0 && (
+          <div style={{
+            marginTop: 18,
+            paddingTop: 14,
+            borderTop: "1px solid rgba(255,255,255,0.20)",
+            position: "relative",
+          }}>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.60)", fontWeight: 700, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Dismissed — click to restore
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {dismissedMembers.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { restoreMember(m.id); setShowRestorePanel(false); }}
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    color: "rgba(255,255,255,0.92)",
+                    border: "1px dashed rgba(255,255,255,0.35)",
+                    borderRadius: 8,
+                    padding: "7px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    transition: "background 0.15s ease",
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>↩</span>
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Mark Attendance Buttons ── */}
       <div style={{ marginBottom: 8 }}>
         <p style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
           Mark Today's Attendance
+          <span style={{ marginLeft: 8, fontWeight: 400, textTransform: "none", fontSize: 11, letterSpacing: 0 }}>
+            — hover a name and click × to dismiss
+          </span>
         </p>
         <div className="member-buttons">
-          {members.map((m) => {
+          {activeMembers.map((m) => {
             const isPresent = attendanceMap[m.id]?.[today] || false;
             return (
-              <button
+              <MemberChip
                 key={m.id}
-                onClick={() => handleToggle(m.id, m.name)}
-                style={{
-                  background: isPresent ? theme.btnPresentGradient : theme.btnAbsentGradient,
-                  boxShadow: isPresent ? theme.btnPresentShadow : theme.btnAbsentShadow,
-                  border: `1px solid ${isPresent ? theme.btnPresentBorder : theme.btnAbsentBorder}`,
-                  color: isPresent ? theme.btnPresentText : "#fff",
-                  padding: "10px 20px",
-                  borderRadius: 10,
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                }}
-              >
-                {isPresent ? (
-                  <>
-                    <span style={{ fontSize: 15 }}>✓</span>
-                    {m.name}
-                  </>
-                ) : (
-                  <>
-                    <span style={{ fontSize: 14, opacity: 0.8 }}>+</span>
-                    {m.name}
-                  </>
-                )}
-              </button>
+                member={m}
+                isPresent={isPresent}
+                onToggle={handleToggle}
+                onDismiss={dismissMember}
+                theme={theme}
+              />
             );
           })}
         </div>
       </div>
 
-      <AttendanceTable members={members} />
+      <AttendanceTable members={activeMembers} />
       <DailyNote />
     </div>
   );
