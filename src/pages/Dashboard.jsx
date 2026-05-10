@@ -9,15 +9,15 @@ import { useTheme } from "../ThemeContext";
 
 const DISMISSED_KEY = "attendance-dismissed-members";
 
-/* ── Small member chip with a hover-dismiss × ── */
-const MemberChip = ({ member, isPresent, onToggle, onDismiss, theme }) => {
-  const [hovered, setHovered] = useState(false);
-
+/* ── Small member chip ── */
+const MemberChip = ({ member, isPresent, onToggle, theme, draggable, onDragStart }) => {
   return (
     <div
-      style={{ position: "relative", display: "inline-flex" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      draggable={draggable}
+      onDragStart={(e) => {
+        if (onDragStart) onDragStart(e, member.id);
+      }}
+      style={{ position: "relative", display: "inline-flex", cursor: draggable ? "grab" : "default" }}
     >
       <button
         onClick={() => onToggle(member.id, member.name)}
@@ -27,14 +27,13 @@ const MemberChip = ({ member, isPresent, onToggle, onDismiss, theme }) => {
           border: `1px solid ${isPresent ? theme.btnPresentBorder : theme.btnAbsentBorder}`,
           color: "#fff",
           padding: "10px 20px",
-          paddingRight: hovered ? 36 : 20,
           borderRadius: 10,
           fontSize: 13.5,
           fontWeight: 600,
           display: "flex",
           alignItems: "center",
           gap: 7,
-          transition: "padding-right 0.2s ease, box-shadow 0.2s ease",
+          transition: "box-shadow 0.2s ease, transform 0.2s ease",
           whiteSpace: "nowrap",
         }}
       >
@@ -43,38 +42,6 @@ const MemberChip = ({ member, isPresent, onToggle, onDismiss, theme }) => {
         ) : (
           <><span style={{ fontSize: 14, opacity: 0.8 }}>+</span>{member.name}</>
         )}
-      </button>
-
-      {/* Dismiss × — visible on hover */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onDismiss(member.id); }}
-        title={`Dismiss ${member.name}`}
-        style={{
-          position: "absolute",
-          right: 6,
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: "rgba(0,0,0,0.28)",
-          border: "none",
-          color: "#fff",
-          fontSize: 13,
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          padding: 0,
-          lineHeight: 1,
-          opacity: hovered ? 1 : 0,
-          pointerEvents: hovered ? "auto" : "none",
-          transition: "opacity 0.18s ease",
-          boxShadow: "none",
-        }}
-      >
-        ×
       </button>
     </div>
   );
@@ -116,12 +83,33 @@ const Dashboard = () => {
   };
 
   const dismissMember = (id) => {
-    setDismissed((prev) => [...prev, id]);
-    setShowRestorePanel(false);
+    if (!dismissed.includes(id)) {
+      setDismissed((prev) => [...prev, id]);
+    }
   };
 
   const restoreMember = (id) => {
     setDismissed((prev) => prev.filter((d) => d !== id));
+  };
+
+  const handleDragStart = (e, id) => {
+    e.dataTransfer.setData("memberId", id);
+  };
+
+  const handleDropToDismiss = (e) => {
+    e.preventDefault();
+    const id = parseInt(e.dataTransfer.getData("memberId"), 10) || e.dataTransfer.getData("memberId");
+    if (id) dismissMember(id);
+  };
+
+  const handleDropToRestore = (e) => {
+    e.preventDefault();
+    const id = parseInt(e.dataTransfer.getData("memberId"), 10) || e.dataTransfer.getData("memberId");
+    if (id) restoreMember(id);
+  };
+
+  const allowDrop = (e) => {
+    e.preventDefault();
   };
 
   const activeMembers = members.filter((m) => !dismissed.includes(m.id));
@@ -139,8 +127,10 @@ const Dashboard = () => {
         minHeight: "100vh",
       }}
     >
-      {/* ── Hero Header ── */}
+      {/* ── Hero Header (Drop Zone for hiding) ── */}
       <div
+        onDragOver={allowDrop}
+        onDrop={handleDropToDismiss}
         style={{
           background: theme.heroGradient,
           borderRadius: 20,
@@ -207,7 +197,7 @@ const Dashboard = () => {
               </span>
             </div>
 
-            {/* Hidden members pill — always shown if any dismissed */}
+            {/* Hidden members pill */}
             {dismissedMembers.length > 0 && (
               <button
                 onClick={() => setShowRestorePanel((p) => !p)}
@@ -242,12 +232,14 @@ const Dashboard = () => {
             position: "relative",
           }}>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.60)", fontWeight: 700, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Dismissed — click to restore
+              Dismissed — drag out or click to restore
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {dismissedMembers.map((m) => (
-                <button
+                <div
                   key={m.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, m.id)}
                   onClick={() => { restoreMember(m.id); setShowRestorePanel(false); }}
                   style={{
                     background: "rgba(255,255,255,0.12)",
@@ -257,7 +249,7 @@ const Dashboard = () => {
                     padding: "7px 16px",
                     fontSize: 13,
                     fontWeight: 600,
-                    cursor: "pointer",
+                    cursor: "grab",
                     display: "flex",
                     alignItems: "center",
                     gap: 7,
@@ -266,7 +258,7 @@ const Dashboard = () => {
                 >
                   <span style={{ fontSize: 14 }}>↩</span>
                   {m.name}
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -274,14 +266,18 @@ const Dashboard = () => {
       </div>
 
       {/* ── Mark Attendance Buttons ── */}
-      <div style={{ marginBottom: 8 }}>
+      <div 
+        style={{ marginBottom: 8 }}
+        onDragOver={allowDrop}
+        onDrop={handleDropToRestore}
+      >
         <p style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
           Mark Today's Attendance
           <span style={{ marginLeft: 8, fontWeight: 400, textTransform: "none", fontSize: 11, letterSpacing: 0 }}>
-            — hover a name and click × to dismiss
+            — drag a name to the blue box to hide
           </span>
         </p>
-        <div className="member-buttons">
+        <div className="member-buttons" style={{ minHeight: 60 }}>
           {activeMembers.map((m) => {
             const isPresent = attendanceMap[m.id]?.[today] || false;
             return (
@@ -290,8 +286,9 @@ const Dashboard = () => {
                 member={m}
                 isPresent={isPresent}
                 onToggle={handleToggle}
-                onDismiss={dismissMember}
                 theme={theme}
+                draggable={true}
+                onDragStart={handleDragStart}
               />
             );
           })}
